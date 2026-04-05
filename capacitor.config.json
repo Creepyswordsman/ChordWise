@@ -1,5 +1,6 @@
 {
-  "appId": "com.mark.chordwise",
+  "appId": "io.ionic.starter",
   "appName": "ChordWise",
-  "webDir": "./"
+  "webDir": "./",
+  "bundledWebRuntime": false
 }
