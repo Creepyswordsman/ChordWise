@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ChordWise Pro - Worship Transposer</title>
+<style>
+:root {
+--bg: #0f172a; --card: rgba(30, 41, 59, 0.7); --text: #f8fafc; --accent: #38bdf8;
+--btn-grad: linear-gradient(135deg, #38bdf8, #818cf8);
+--splash-bg: radial-gradient(circle, #1e293b 0%, #0f172a 100%);
+}
+.light-mode {
+--bg: #f1f5f9; --card: rgba(255, 255, 255, 0.8); --text: #0f172a; --accent: #0284c7;
+--btn-grad: linear-gradient(135deg, #0ea5e9, #6366f1);
+}
+
+body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); transition: 0.5s; overflow: hidden; }
+
+/* --- SPLASH COVER --- */
+#splash-screen {
+position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--splash-bg);
+display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999;
+transition: opacity 0.8s ease-out, visibility 0.8s;
+}
+.splash-logo-svg { width: 80px; height: 80px; animation: bounceIn 1.5s ease-out, pulsePulse 2s infinite 1.5s; }
+.splash-title { margin-top: 20px; font-size: 1.5rem; letter-spacing: 5px; font-weight: 900; text-transform: uppercase; background: var(--btn-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; opacity: 0; animation: fadeInUp 1s forwards 0.8s; }
+
+@keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes pulsePulse { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.4)); } 50% { transform: scale(1.03); filter: drop-shadow(0 0 20px rgba(56, 189, 248, 0.6)); } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+/* --- MAIN APP --- */
+#main-app { opacity: 0; visibility: hidden; transition: 1s; padding: 15px; max-width: 450px; margin: 0 auto; height: 100vh; overflow-y: auto; box-sizing: border-box; }
+
+header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 15px 0;
+width: 100%;
+}
+
+h2 {
+font-size: 1.3rem;
+letter-spacing: 2px;
+background: var(--btn-grad);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+font-weight: 900;
+text-transform: uppercase;
+margin: 0;
+text-align: center;
+flex-grow: 1;
+}
+
+.icon-btn {
+width: 36px; height: 36px; background: var(--card); border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); font-size: 0.9rem;
+}
+
+textarea { width: 100%; height: 120px; background: var(--card); color: var(--text); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; padding: 12px; box-sizing: border-box; outline: none; font-family: 'Fira Code', monospace; margin-top: 5px; font-size: 0.9rem; }
+.controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 12px; }
+.btn { padding: 12px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; font-size: 0.75rem; transition: 0.2s; }
+.btn-trans { background: var(--card); color: var(--text); }
+.btn-main { background: var(--btn-grad); color: white; grid-column: span 3; margin-top: 2px; }
+
+.output-box { position: relative; background: #ffffff; color: #1e293b; border-radius: 20px; padding: 45px 12px 15px; margin-top: 20px; min-height: 100px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+#output { margin: 0; white-space: pre-wrap; font-family: 'Fira Code', monospace; line-height: 1.6; font-size: 0.9rem; }
+.copy-chip { position: absolute; top: 10px; right: 12px; background: #10b981; color: white; padding: 5px 10px; border-radius: 8px; font-size: 0.6rem; font-weight: bold; cursor: pointer; }
+
+#keySection { display: none; grid-column: span 3; text-align: center; background: var(--card); padding: 10px; border-radius: 10px; }
+select { background: none; color: var(--text); border: 1px solid var(--accent); padding: 3px; border-radius: 6px; font-weight: bold; font-size: 0.8rem; }
+
+/* --- UPDATED RESPONSIVE TUTORIAL MODAL --- */
+#tutorial-modal {
+position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+display: none; justify-content: center; align-items: center;
+z-index: 10000; padding: 15px; box-sizing: border-box;
+}
+
+.modal-content {
+background: var(--bg);
+border: 2px solid var(--accent);
+border-radius: 20px;
+padding: 35px 20px 20px;
+width: 92%; /* Dynamic width para sa phone */
+max-width: 380px;
+color: var(--text);
+position: relative;
+max-height: 80vh; /* Para hindi lumampas sa height ng screen */
+display: flex;
+flex-direction: column;
+box-shadow: 0 0 30px rgba(56, 189, 248, 0.2);
+}
+
+.modal-body {
+overflow-y: auto; /* Dito mag-scroll ang text */
+padding-right: 5px;
+}
+
+.close-modal {
+position: absolute;
+top: 10px;
+right: 15px;
+cursor: pointer;
+font-size: 1.8rem;
+font-weight: 900;
+color: var(--accent);
+z-index: 10001;
+}
+
+.tut-step { margin-bottom: 15px; font-size: 0.85rem; line-height: 1.5; border-bottom: 1px solid rgba(56, 189, 248, 0.1); padding-bottom: 10px; }
+.tut-step b { color: var(--accent); display: block; margin-bottom: 3px; }
+
+footer { margin-top: 20px; text-align: center; opacity: 0.4; font-size: 0.55rem; letter-spacing: 2px; padding-bottom: 15px; }
+</style>
+</head>
+<body class="light-mode">
+
+<div id="splash-screen">
+<svg class="splash-logo-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+<defs><linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#38bdf8;stop-opacity:1" /><stop offset="100%" style="stop-color:#818cf8;stop-opacity:1" /></linearGradient></defs>
+<path d="M20 30L40 70L50 50L60 70L80 30" stroke="url(#grad1)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M50 20L50 50M50 20L40 30M50 20L60 30" stroke="url(#grad1)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+<div class="splash-title">CHORDWISE</div>
+<div style="margin-top:10px; font-size:0.5rem; letter-spacing:2px; color:#64748b;">CREATED BY MARK ANTHONY M. ADRIANO</div>
+</div>
+
+<div id="tutorial-modal">
+<div class="modal-content">
+<span class="close-modal" onclick="toggleTutorial()">×</span>
+<h3 style="margin-top:0; color:var(--accent); text-align: center; font-size: 1.1rem; margin-bottom: 20px;">User Guide</h3>
+
+<div class="modal-body">
+<div class="tut-step"><b>Song Information</b>Start your line with <b>Title:</b> or <b>Artist:</b> to lock the text. ChordWise will ignore these lines during transposition.</div>
+<div class="tut-step"><b>Transposing Chords</b>Use the <b>UP</b> or <b>DOWN</b> buttons to change the key of your chords instantly.</div>
+<div class="tut-step"><b>Number System</b>Activate this to convert chords into numbers. Make sure to select the correct <b>Root Key</b></div>
+<div class="tut-step"><b>Copy & Export</b>Tap <b>COPY CHORDS</b> to quickly save your transposed version.</div>
+<div class="tut-step" style="border:none; text-align:center; background:rgba(56, 189, 248, 0.1); padding:15px; border-radius:12px;">
+<b style="display:inline;">☕ Support ChordWise</b><br>
+<span style="font-size:0.8rem; opacity:0.8;">Buy me coffee via GCash:</span><br>
+<strong style="color:var(--accent); font-size:1rem;">09055202557</strong>
+</div>
+</div>
+
+<button class="btn btn-main" style="margin-top: 15px;" onclick="toggleTutorial()">GOT IT!</button>
+</div>
+</div>
+
+<div id="main-app">
+<header>
+<div class="icon-btn" onclick="toggleTutorial()">❓</div>
+<h2>CHORDWISE</h2>
+<div class="icon-btn" onclick="toggleTheme()" id="themeIcon">☀️</div>
+</header>
+
+<div style="text-align: center; font-size: 0.5rem; opacity: 0.5; letter-spacing: 2px; margin-top: -10px; margin-bottom: 15px;">V1.0 Pro Edition</div>
+
+<div id="counter" style="text-align: center; font-size: 0.7rem; color: var(--accent); font-weight: bold; margin-bottom: 10px;">KEY OFFSET: 0</div>
+
+<textarea id="input" oninput="processTranspose()" placeholder="Title: Amazing Grace&#10;Verse 1: G C G D"></textarea>
+
+<div class="controls">
+<div id="keySection">
+<span style="font-size:0.65rem; margin-right:5px;">KEY:</span>
+<select id="rootKey" onchange="processTranspose()"><option value="C" selected>C</option><option value="C#">C#</option><option value="D">D</option><option value="D#">D#</option><option value="E">E</option><option value="F">F</option><option value="F#">F#</option><option value="G">G</option><option value="G#">G#</option><option value="A">A</option><option value="A#">A#</option><option value="B">B</option></select>
+</div>
+<button class="btn btn-trans" onclick="changeKey(-1)">♭ DOWN</button>
+<button class="btn btn-trans" onclick="resetKey()">RESET</button>
+<button class="btn btn-trans" onclick="changeKey(1)">♯ UP</button>
+<button class="btn btn-main" id="numBtn" onclick="toggleNumberSystem()">ACTIVATE NUMBER SYSTEM</button>
+</div>
+
+<div class="output-box">
+<div class="copy-chip" onclick="copyToClipboard()">COPY CHORDS</div>
+<pre id="output">Chords will appear here...</pre>
+</div>
+
+<footer>DESIGNED & DEVELOPED BY<br><strong>MARK ANTHONY ADRIANO</strong></footer>
+</div>
+
+<script>
+// --- UI & SPLASH ---
+window.addEventListener('load', () => {
+setTimeout(() => {
+document.getElementById('splash-screen').style.opacity = '0';
+document.getElementById('splash-screen').style.visibility = 'hidden';
+document.getElementById('main-app').style.opacity = '1';
+document.getElementById('main-app').style.visibility = 'visible';
+}, 5000);
+});
+
+function toggleTheme() {
+document.body.classList.toggle('light-mode');
+document.getElementById('themeIcon').innerText = document.body.classList.contains('light-mode') ? "☀️" : "🌙";
+}
+
+function toggleTutorial() {
+const modal = document.getElementById('tutorial-modal');
+modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
+}
+
+// --- TRANSPOSE LOGIC ---
+const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const flats = {'Db':'C#', 'Eb':'D#', 'Gb':'F#', 'Ab':'G#', 'Bb':'A#'};
+let currentOffset = 0; let isNumberSystem = false;
+
+function updateCounter() { document.getElementById('counter').innerText = "KEY OFFSET: " + (currentOffset > 0 ? "+" + currentOffset : currentOffset); }
+function changeKey(step) { currentOffset += step; updateCounter(); processTranspose(); }
+function resetKey() { currentOffset = 0; isNumberSystem = false; updateCounter(); document.getElementById('numBtn').innerText = "ACTIVATE NUMBER SYSTEM"; document.getElementById('keySection').style.display = "none"; processTranspose(); }
+function toggleNumberSystem() { isNumberSystem = !isNumberSystem; document.getElementById('keySection').style.display = isNumberSystem ? "block" : "none"; document.getElementById('numBtn').innerText = isNumberSystem ? "NUMBER SYSTEM ACTIVE" : "ACTIVATE NUMBER SYSTEM"; processTranspose(); }
+
+function isChord(word) {
+const clean = word.trim();
+if (!clean || clean.length > 7) return false;
+const chordPattern = /^[A-G][b#]?([a-zA-Z0-9#\(\)\-\+]{0,6})(\/[A-G][b#]?)?$/;
+return chordPattern.test(clean);
+}
+
+function processTranspose() {
+let text = document.getElementById('input').value;
+let output = document.getElementById('output');
+let songKey = document.getElementById('rootKey').value;
+if(!text) { output.innerText = "Transposed chords will appear here..."; return; }
+
+let lines = text.split('\n').map(line => {
+let upperLine = line.trim().toUpperCase();
+if (upperLine.startsWith("TITLE:") || upperLine.startsWith("ARTIST:") || upperLine.startsWith("COMPOSER:")) return line;
+
+let label = ""; let content = line;
+if (line.includes(':')) {
+let idx = line.indexOf(':');
+label = line.substring(0, idx + 1);
+content = line.substring(idx + 1);
+}
+
+let segments = content.split(/(\s+)/);
+let processed = segments.map(seg => {
+if (isChord(seg)) {
+if (seg.includes('/')) {
+let s = seg.split('/');
+return isNumberSystem ? convertToNumber(s[0], songKey) + "/" + convertToNumber(s[1], songKey) : transposeSingle(s[0]) + "/" + transposeSingle(s[1]);
+}
+return isNumberSystem ? convertToNumber(seg, songKey) : transposeSingle(seg);
+}
+return seg;
+});
+return label + processed.join('');
+});
+output.innerText = lines.join('\n');
+}
+
+function transposeSingle(chord) {
+let m = chord.match(/^[A-G][b#]?/); if (!m) return chord;
+let index = notes.indexOf(flats[m[0]] || m[0]);
+return notes[(index + currentOffset + 120) % 12] + chord.substring(m[0].length);
+}
+
+function convertToNumber(chord, songKey) {
+let m = chord.match(/^[A-G][b#]?/); if (!m) return chord;
+let diff = (notes.indexOf(flats[m[0]] || m[0]) - notes.indexOf(songKey) + 12) % 12;
+const nMap = {0:'1', 1:'1#', 2:'2', 3:'2#', 4:'3', 5:'4', 6:'4#', 7:'5', 8:'5#', 9:'6', 10:'6#', 11:'7'};
+return (nMap[diff] || '?') + chord.substring(m[0].length);
+}
+
+function copyToClipboard() {
+navigator.clipboard.writeText(document.getElementById('output').innerText).then(() => {
+const b = document.querySelector('.copy-chip'); b.innerText = "COPIED!";
+setTimeout(() => b.innerText = "COPY CHORDS", 2000);
+});
+}
+</script>
+</body>
+</html>
